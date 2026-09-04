@@ -149,25 +149,38 @@ async function applyCrop(){
 function renderFit(ctx,img,x,y,w,h){
  const r=Math.min(w/img.width,h/img.height),dw=img.width*r,dh=img.height*r;ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh)
 }
+function renderCover(ctx,img,x,y,w,h){
+ // Fill the whole cell without stretching. This prevents the unwanted
+ // transparent/duplicated strip that appeared when the two crop sizes differed.
+ const scale=Math.max(w/img.width,h/img.height);
+ const sw=w/scale,sh=h/scale;
+ const sx=(img.width-sw)/2,sy=(img.height-sh)/2;
+ ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+}
 function joinPhotos(){
  if(!croppedImages.left||!croppedImages.right){toast('ছবি ১ ও ছবি ২ দুটিই ক্রপ করুন');return}
  try{
    const a=croppedImages.left,b=croppedImages.right;
-   const h=Math.max(a.height,b.height);
-   const eachW=Math.max(a.width,b.width);
-   const gap=Math.max(8,Math.round(eachW*.04));
-   const c=document.createElement('canvas');c.width=eachW*2+gap;c.height=h;
+   // Both photos are placed in equal side-by-side cells. The cell ratio is
+   // taken from the currently selected crop size, so faces stay proportional.
+   const spec=getCropSpec();
+   const cellH=Math.max(1,spec.pxH);
+   const cellW=Math.max(1,spec.pxW);
+   const gap=0;
+   const c=document.createElement('canvas');c.width=cellW*2+gap;c.height=cellH;
    const ctx=c.getContext('2d',{alpha:true});
    bgFill(ctx,c.width,c.height);
-   renderFit(ctx,a,0,0,eachW,h);
-   renderFit(ctx,b,eachW+gap,0,eachW,h);
+   renderCover(ctx,a,0,0,cellW,cellH);
+   renderCover(ctx,b,cellW+gap,0,cellW,cellH);
    window.joinCanvas=c;
    const card=$('finalSizeCard');card.classList.remove('hidden');
-   $('finalW').value=(c.width/DPI).toFixed(2);$('finalH').value=(c.height/DPI).toFixed(2);$('finalUnit').value='inch';
+   $('finalW').value=(c.width/DPI).toFixed(2);
+   $('finalH').value=(c.height/DPI).toFixed(2);
+   $('finalUnit').value='inch';
    showResult(c.toDataURL('image/png'));
    card.scrollIntoView({behavior:'smooth',block:'center'});
-   toast('জোড়া ছবি তৈরি হয়েছে — এখন চূড়ান্ত সাইজ দিন');
- }catch(e){console.error(e);toast('জোড়া ছবি তৈরি করা যায়নি। আবার ক্রপ করে চেষ্টা করুন।')}
+   toast(`জোড়া ছবি তৈরি হয়েছে — পাশাপাশি সমান মাপে ${c.width} × ${c.height} px`);
+ }catch(e){console.error(e);toast('জোড়া ছবি তৈরি করা যায়নি। দুই ছবির ক্রপ নিশ্চিত করে আবার চেষ্টা করুন।')}
 }
 function generateFinal(){
  if(!window.joinCanvas){toast('প্রথমে জোড়া ছবি তৈরি করুন');return}
