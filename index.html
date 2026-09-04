@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffaf5"><title>সহজ কাজ — AI Photo & Document Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar"><button class="brand" onclick="goHome()"><span class="brand-mark">✦</span><span><b>সহজ কাজ</b><small>WWW.SHOHOZKAJ.COM</small></span></button><div class="top-actions"><button class="icon-btn" onclick="toast('সার্চ শিগগিরই যোগ হবে')">⌕</button><button class="avatar" onclick="showProfile()">ইউ</button></div></header>
+<main>
+<section id="homeView" class="view active home-view">
+  <div class="hero"><div><span class="eyebrow">এক জায়গায় সব দরকারি টুল</span><h1>ছবি, ডকুমেন্ট ও কাজ<br>হোক <em>সহজ</em></h1><p>AI দিয়ে ছবি এডিট, ব্যাকগ্রাউন্ড রিমুভ, OCR এবং আরও অনেক কিছু।</p></div><button class="hero-btn" onclick="openEditor()">AI Photo Edit <span>→</span></button></div>
+  <section><div class="section-head"><h2>প্রধান টুল</h2><button onclick="scrollToTools()">সব দেখুন</button></div><div class="main-tools">
+    <button class="tool-card ai" onclick="openEditor()"><span class="tool-icon">Ai<span>✦</span></span><strong>এআই ফটো এডিট</strong></button>
+    <button class="tool-card manual" onclick="openEditor()"><span class="tool-icon">▣</span><strong>ম্যানুয়াল ফটো এডিট</strong></button>
+    <button class="tool-card bg" onclick="openEditor('remove')"><span class="tool-icon">▧</span><strong>ব্লক ফটো এডিট</strong></button>
+    <button class="tool-card docs" onclick="toast('ডকুমেন্ট তৈরি মডিউল প্রস্তুত হচ্ছে')"><span class="tool-icon">▤</span><strong>ডকুমেন্ট তৈরি</strong></button>
+    <button class="tool-card job" onclick="toast('চাকরির বিজ্ঞপ্তি মডিউল শিগগিরই')"><span class="tool-icon">JOB</span><strong>চাকরির বিজ্ঞপ্তি</strong></button>
+    <button class="tool-card tools" onclick="scrollToTools()"><span class="tool-icon">⌘</span><strong>সহজটুলস</strong></button>
+  </div></section>
+  <section id="toolsTitle" class="mini-section"><div class="section-head"><h2>আরও টুল</h2><span>নতুন</span></div><div class="mini-grid">
+    <button onclick="openUpload('fill')"><i>▣</i><b>ফর্ম ফটো<br>ফিলআপ</b><small>নতুন</small></button>
+    <button onclick="openUpload('compress')"><i>▱</i><b>ইমেজ কমপ্রেস</b></button>
+    <button onclick="openUpload('convert')"><i>JPG</i><b>ইমেজ কনভার্ট<br>JPG</b><small>হট</small></button>
+    <button onclick="toast('Enhanced PDF — শিগগিরই')"><i>PDF</i><b>এনহান্সড ১<br>পিডিএফ</b><small>হট</small></button>
+    <button onclick="toast('Passport PDF — শিগগিরই')"><i>PDF</i><b>পাসপোর্ট ১<br>পিডিএফ</b></button>
+    <button onclick="toast('PDF Edit — শিগগিরই')"><i>✎</i><b>পিডিএফ এডিট</b><small>নতুন</small></button>
+    <button onclick="openUpload('ocr')"><i>TXT</i><b>ছবি থেকে লেখা</b><small>নতুন</small></button>
+    <button onclick="toast('ডকুমেন্ট স্ক্যানার — শিগগিরই')"><i>✦</i><b>ডকুমেন্ট<br>স্ক্যানার</b><small>নতুন</small></button>
+  </div></section>
+  <section class="account-section"><h2>হিসাব ও সেটিংস</h2><div class="account-cards"><button onclick="showProfile()">👤 <span>প্রোফাইল</span><b>›</b></button><button onclick="toast('ব্যবহার ও ক্রেডিট শিগগিরই')">◈ <span>ব্যবহার ও ক্রেডিট</span><b>›</b></button></div></section>
+</section>
+
+<section id="editorView" class="view editor-view">
+ <div class="editor-head"><button onclick="goHome()">←</button><div><b>এআই ফটো এডিট</b><small>আপনার ছবিকে নির্দেশনা দিন</small></div><button onclick="showProfile()">⋮</button></div>
+ <div class="editor-canvas">
+  <div id="singleUpload" class="upload-panel"><div class="upload-icon">↑</div><h3>একটি ছবি আপলোড করুন</h3><p>টেনে আনুন অথবা চাপ করুন • JPG, PNG • সর্বোচ্চ 60MB</p><button class="primary" onclick="pickImage('single')">ছবি আপলোড করুন</button><button class="link-btn" onclick="toggleMode()">অথবা ২ টি আলাদা ছবি আপলোড করুন</button><img id="singlePreview" class="preview" alt="">
+  </div>
+  <div id="dualUpload" class="dual-panel hidden"><div id="leftBox" class="dual-box"><span>বাম দিকের ছবি আপলোড করুন</span><button onclick="pickImage('left')">ছবি আপলোড করুন</button><img id="leftPreview" class="preview" alt=""></div><div id="rightBox" class="dual-box"><span>ডান দিকের ছবি আপলোড করুন</span><button onclick="pickImage('right')">ছবি আপলোড করুন</button><img id="rightPreview" class="preview" alt=""></div><button class="mode-off" onclick="toggleMode()">ডুয়াল মোড বন্ধ করুন</button></div>
+  <div id="resultPanel" class="result-panel hidden"><span class="result-badge">✓ ফলাফল প্রস্তুত</span><img id="resultImage" alt="AI result"><div class="result-actions"><a id="downloadBtn" class="primary" download="sohozkaj-result.png">ডাউনলোড করুন</a><button onclick="useResult()">আবার এডিট</button></div></div>
+ </div>
+ <div class="control-tabs"><button class="selected" onclick="openSheet('sizeSheet')">▣<span>ছবির মাপ</span></button><button onclick="openSheet('styleSheet')">◉<span>স্টাইল+BG</span></button><button class="magic" onclick="generateAI()">✦</button><button onclick="focusPrompt()">✎<span>নির্দেশনা</span></button><button onclick="openSheet('settingsSheet')">⚙<span>সেটিং</span></button></div>
+ </div>
+</section>
+<section id="profileView" class="view profile-view"><div class="profile-head"><button onclick="goHome()">←</button><h2>প্রোফাইল</h2></div><div class="profile-card"><div class="big-avatar">ইউ</div><h3>সহজ কাজ ব্যবহারকারী</h3><p>আপনার ছবি ও ডকুমেন্ট এক জায়গায়।</p></div><div class="settings-list"><button>🔒 <span>গোপনীয়তা ও নিরাপত্তা</span><b>›</b></button><button>◈ <span>ব্যবহার ও ক্রেডিট</span><b>›</b></button><button>⚙ <span>অ্যাপ সেটিংস</span><b>›</b></button></div></section>
+</main>
+<nav class="bottom-nav"><button class="active" onclick="goHome()">⌂<span>হোম</span></button><button onclick="toast('ডকুমেন্ট সেকশন শিগগিরই')">▤<span>ডকুমেন্ট</span></button><button class="plus" onclick="openQuick()">+</button><button onclick="toast('ছবি সেকশন শিগগিরই')">▧<span>ছবি</span></button><button onclick="showProfile()">♙<span>প্রোফাইল</span></button></nav>
+</div>
+<input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+<div id="overlay" class="overlay" onclick="closeSheets()"></div>
+<div id="sizeSheet" class="sheet"><div class="sheet-grab"></div><h3>ছবির মাপ</h3><p>ছবির মাপ বেছে নিন</p><div class="pill-tabs"><button class="selected">পাসপোর্ট</button><button>দুয়াল</button><button>ই-পাস</button><button>ভিসা</button><button>জন্ম</button></div><div class="size-grid" id="sizeGrid"></div></div>
+<div id="styleSheet" class="sheet"><div class="sheet-grab"></div><h3>স্টাইল ও ব্যাকগ্রাউন্ড</h3><p>পোশাক ও পটভূমি বেছে নিন</p><h4>পোশাক</h4><div class="clothes-grid"><button>👤</button><button>👔</button><button>🔵</button><button>🧑‍💼</button><button>🕴️</button><button>🥻</button><button>🧕</button><button>👘</button></div><h4>ব্যাকগ্রাউন্ড</h4><div class="colors"><button data-color="#fff"> </button><button data-color="#dff3ff"> </button><button data-color="#a9e7ee"> </button><button data-color="#ddd"> </button><button data-color="#2969ff"> </button><button data-color="#5bc7bd"> </button><button data-color="#f6e9cf"> </button><button data-color="#111"> </button></div></div>
+<div id="settingsSheet" class="sheet"><div class="sheet-grab"></div><h3>এআই নির্দেশনা</h3><p>আপনি কী পরিবর্তন চান?</p><textarea id="prompt">ছবিটি পরিষ্কার ও প্রফেশনাল করুন, মুখের স্বাভাবিক বৈশিষ্ট্য অপরিবর্তিত রাখুন।</textarea><label>আউটপুট মান</label><select id="quality"><option value="auto">Auto</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select><button class="primary wide" onclick="generateAI()">✦ AI দিয়ে তৈরি করুন</button></div>
+<div id="quickSheet" class="sheet quick-sheet"><div class="sheet-grab"></div><h3>দ্রুত কাজ</h3><div class="quick-grid"><button onclick="openEditor();closeSheets()">✦<span>AI Photo Edit</span></button><button onclick="openUpload('ocr');closeSheets()">TXT<span>ছবি থেকে লেখা</span></button><button onclick="openUpload('remove');closeSheets()">✂<span>BG Remove</span></button><button onclick="openUpload('compress');closeSheets()">▱<span>Compress</span></button></div></div>
+<div id="utilitySheet" class="sheet"><div class="sheet-grab"></div><h3 id="utilityTitle">টুল</h3><p id="utilityText">ছবি আপলোড করুন</p><button class="primary wide" onclick="pickImage('utility')">ছবি আপলোড করুন</button><div id="ocrOutput" class="ocr-output hidden"></div></div>
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body></html>
