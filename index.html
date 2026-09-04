@@ -60,10 +60,10 @@
             <option value="35x45">৩৫ × ৪৫ মিমি</option><option value="40x50">৪০ × ৫০ মিমি</option><option value="3.5x4.5">৩.৫ × ৪.৫ সেমি</option><option value="custom">কাস্টম মাপ</option>
           </select>
         </div>
-        <div class="size-inputs"><label>প্রস্থ<input id="cropW" type="number" min="1" step="0.01"></label><label>উচ্চতা<input id="cropH" type="number" min="1" step="0.01"></label><label>একক<select id="cropUnit"><option value="px">px</option><option value="mm">mm</option><option value="cm">cm</option><option value="inch">inch</option></select></label></div>
+        <div class="size-inputs"><label>প্রস্থ<input id="cropW" type="number" min="1" step="0.01" inputmode="decimal"></label><label>উচ্চতা<input id="cropH" type="number" min="1" step="0.01" inputmode="decimal"></label><label>একক<select id="cropUnit"><option value="px">px</option><option value="mm">mm</option><option value="cm">cm</option><option value="inch">inch</option></select></label></div><div class="size-lock-row"><button id="ratioLockBtn" class="lock-btn active" onclick="toggleRatioLock()">🔒 অনুপাত লক</button><span id="manualSizeHint">হাতে মাপ লিখে ফ্রেম ঠিক করুন</span></div>
         <div class="smart-line"><label><input id="smartMode" type="checkbox"> স্মার্ট/AI ক্রপ</label><span>মুখ নিরাপদ রেখে ভারসাম্যপূর্ণ ফ্রেম</span></div>
         <div class="bg-row"><b>ব্যাকগ্রাউন্ড</b><button class="bg-choice active" data-bg="original">মূল</button><button class="bg-choice" data-bg="white">সাদা</button><button class="bg-choice" data-bg="transparent">স্বচ্ছ</button><label class="bg-custom"><input id="bgColor" type="color" value="#ffffff"> কাস্টম</label></div>
-        <div class="action-row"><button class="secondary" onclick="openCrop('current')">✂ ক্রপ/এডিট করুন</button><button id="joinBtn" class="primary hidden" onclick="joinPhotos()">জোড়া ছবি তৈরি করুন</button></div>
+        <div class="action-row"><button class="secondary" onclick="openCrop('current')">✂ ক্রপ/এডিট করুন</button><button class="secondary" onclick="openUpload('remove')">✂ ব্যাকগ্রাউন্ড রিমুভ</button><button id="joinBtn" class="primary hidden" onclick="joinPhotos()">জোড়া ছবি তৈরি করুন</button></div>
       </div>
       <div id="finalSizeCard" class="control-card hidden">
         <div class="card-title"><b>ফাইনাল আউটপুটের মাপ</b><span>জোড়া ছবির সঠিক প্রিন্ট সাইজ</span></div>
@@ -85,7 +85,7 @@
   <div class="crop-tools">
    <button onclick="cropZoom(-0.1)">−<span>জুম আউট</span></button><button onclick="cropZoom(0.1)">+<span>জুম ইন</span></button><button onclick="rotateCrop(-90)">↶<span>বামে ঘোরান</span></button><button onclick="rotateCrop(90)">↷<span>ডানে ঘোরান</span></button><button onclick="resetCrop()">↺<span>রিসেট</span></button>
   </div>
-  <p class="crop-help">ফ্রেমের ভিতরে ছবি টেনে সরান। দুই আঙুলে জুম/প্যান করা যাবে।</p>
+  <p class="crop-help">ছবি আঙুল দিয়ে টেনে সরান • দুই আঙুলে জুম • মাপ বদলালে অনুপাত ঠিক থাকবে।</p>
   <button class="primary wide" onclick="applyCrop()">ক্রপ নিশ্চিত করুন</button>
  </div>
 </div>
@@ -93,13 +93,13 @@
 </main>
 <nav class="bottom-nav"><button class="active" onclick="goHome()">⌂<span>হোম</span></button><button onclick="toast('ডকুমেন্ট সেকশন শিগগিরই')">▤<span>ডকুমেন্ট</span></button><button class="plus" onclick="openQuick()">+</button><button onclick="toast('ছবি সেকশন শিগগিরই')">▧<span>ছবি</span></button><button onclick="showProfile()">♙<span>প্রোফাইল</span></button></nav>
 </div>
-<input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+<input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><input id="utilityFileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
 <div id="overlay" class="overlay" onclick="closeSheets()"></div>
 <div id="sizeSheet" class="sheet"><div class="sheet-grab"></div><h3>ছবির মাপ</h3><p>ছবির মাপ বেছে নিন</p><div class="pill-tabs"><button class="selected">পাসপোর্ট</button><button>দুয়াল</button><button>ই-পাস</button><button>ভিসা</button><button>জন্ম</button></div><div class="size-grid" id="sizeGrid"></div></div>
 <div id="styleSheet" class="sheet"><div class="sheet-grab"></div><h3>স্টাইল ও ব্যাকগ্রাউন্ড</h3><p>পোশাক ও পটভূমি বেছে নিন</p><h4>পোশাক</h4><div class="clothes-grid"><button>👤</button><button>👔</button><button>🔵</button><button>🧑‍💼</button><button>🕴️</button><button>🥻</button><button>🧕</button><button>👘</button></div><h4>ব্যাকগ্রাউন্ড</h4><div class="colors"><button data-color="#fff"> </button><button data-color="#dff3ff"> </button><button data-color="#a9e7ee"> </button><button data-color="#ddd"> </button><button data-color="#2969ff"> </button><button data-color="#5bc7bd"> </button><button data-color="#f6e9cf"> </button><button data-color="#111"> </button></div></div>
 <div id="settingsSheet" class="sheet"><div class="sheet-grab"></div><h3>এআই নির্দেশনা</h3><p>আপনি কী পরিবর্তন চান?</p><textarea id="prompt">ছবিটি পরিষ্কার ও প্রফেশনাল করুন, মুখের স্বাভাবিক বৈশিষ্ট্য অপরিবর্তিত রাখুন।</textarea><label>আউটপুট মান</label><select id="quality"><option value="auto">স্বয়ংক্রিয়</option><option value="low">কম</option><option value="medium">মাঝারি</option><option value="high">উচ্চ</option></select><button class="primary wide" onclick="generateAI()">✦ AI দিয়ে তৈরি করুন</button></div>
 <div id="quickSheet" class="sheet quick-sheet"><div class="sheet-grab"></div><h3>দ্রুত কাজ</h3><div class="quick-grid"><button onclick="openEditor();closeSheets()">✦<span>এআই ফটো এডিট</span></button><button onclick="openUpload('ocr');closeSheets()">TXT<span>ছবি থেকে লেখা</span></button><button onclick="openUpload('remove');closeSheets()">✂<span>ব্যাকগ্রাউন্ড রিমুভ</span></button><button onclick="openUpload('compress');closeSheets()">▱<span>কমপ্রেস</span></button></div></div>
-<div id="utilitySheet" class="sheet"><div class="sheet-grab"></div><h3 id="utilityTitle">টুল</h3><p id="utilityText">ছবি আপলোড করুন</p><div id="bgProviderRow" class="bg-provider hidden"><label>ব্যাকগ্রাউন্ড রিমুভ সার্ভিস<select id="bgProvider"><option value="cutoutpro">Cutout.Pro</option><option value="removebg">remove.bg</option></select></label></div><button class="primary wide" onclick="pickImage('utility')">ছবি আপলোড করুন</button><div id="ocrOutput" class="ocr-output hidden"></div></div>
+<div id="utilitySheet" class="sheet"><div class="sheet-grab"></div><h3 id="utilityTitle">টুল</h3><p id="utilityText">ছবি আপলোড করুন</p><div id="bgProviderRow" class="bg-provider hidden"><label>ব্যাকগ্রাউন্ড রিমুভ সার্ভিস<select id="bgProvider"><option value="auto">স্বয়ংক্রিয় (সেরা চেষ্টা)</option><option value="cutoutpro">Cutout.Pro</option><option value="removebg">remove.bg</option></select></label></div><button class="primary wide" onclick="pickImage('utility')">ছবি আপলোড করুন</button><div id="ocrOutput" class="ocr-output hidden"></div></div>
 <div id="toast" class="toast"></div>
 <script src="app.js"></script>
 </body></html>

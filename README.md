@@ -33,3 +33,11 @@
 - API keys frontend-এ রাখা হয়নি।
 - Crop/join processing browser canvas-এ হয়; মূল uploaded file পরিবর্তন করা হয় না।
 - Final physical sizes are rendered at 300 DPI for print-oriented output.
+
+## মোবাইল/ক্রপ ফিক্স
+- এডিটর স্ক্রিনে নিচের সাদা গ্লোবাল ন্যাভিগেশন বার লুকানো থাকে; ক্রপ/এডিট কন্ট্রোল নিচে ঠিকভাবে থাকে।
+- ইউটিলিটি আপলোডের জন্য আলাদা file input আছে, তাই ব্যাকগ্রাউন্ড রিমুভ ও OCR এখন সঠিক ফাইলে কাজ করে।
+- Background Remove-এ Auto provider প্রথমে Cutout.Pro, প্রয়োজনে remove.bg চেষ্টা করে।
+- Crop width/height হাতে লেখা যায় এবং লক করা অনুপাত স্বয়ংক্রিয়ভাবে বজায় থাকে।
+- দুই আঙুলে pinch zoom এবং এক আঙুলে image pan কাজ করে।
+- Two-photo join সমান উচ্চতা/সাইজ, spacing ও proportion বজায় রেখে তৈরি হয়।

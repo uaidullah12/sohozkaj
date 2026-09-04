@@ -4,7 +4,10 @@ let currentTarget='single', utilityMode='', lastImage='';
 const $=id=>document.getElementById(id);
 const cropStates={single:null,left:null,right:null};
 const croppedImages={single:null,left:null,right:null};
-let activeCropTarget='single', cropZoomLevel=1, cropRotation=0, cropPan={x:0,y:0}, dragging=false, dragStart=null;
+const sourceFiles={single:null,left:null,right:null};
+let utilityFile=null;
+let cropRatioLocked=true;
+let activeCropTarget='single', cropZoomLevel=1, cropRotation=0, cropPan={x:0,y:0}, dragging=false, dragStart=null, pinchStartDistance=0, pinchStartZoom=1;
 const PRESETS={
  passport:{w:35,h:45,u:'mm'}, visa:{w:35,h:45,u:'mm'}, nid:{w:35,h:45,u:'mm'},
  job:{w:40,h:50,u:'mm'}, birth:{w:35,h:45,u:'mm'}, '2x2':{w:2,h:2,u:'inch'},
@@ -16,7 +19,7 @@ function toast(msg){const t=$('toast');if(!t)return;t.textContent=msg;t.classLis
 function openSheet(id){closeSheets();$('overlay')?.classList.add('open');$(id)?.classList.add('open')}
 function closeSheets(){document.querySelectorAll('.sheet').forEach(x=>x.classList.remove('open'));$('overlay')?.classList.remove('open')}
 function openQuick(){openSheet('quickSheet')}
-function setView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');closeSheets();window.scrollTo(0,0)}
+function setView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(id)?.classList.add('active');document.body.classList.toggle('editor-active',id==='editorView');closeSheets();window.scrollTo(0,0)}
 function goHome(){setView('homeView')}
 function openEditor(mode='single'){setView('editorView'); if(mode==='remove'){utilityMode='remove';if($('prompt'))$('prompt').value='ব্যাকগ্রাউন্ড পরিষ্কারভাবে সরিয়ে দিন এবং বিষয়টিকে স্বাভাবিক রাখুন।'}else utilityMode='ai'}
 function showProfile(){setView('profileView')}
@@ -28,20 +31,48 @@ function setPhotoMode(mode){
  if(dual) toast('দুটি ছবির মোড চালু হয়েছে');
 }
 function toggleMode(){setPhotoMode($('dualUpload')?.classList.contains('hidden')?'dual':'single')}
-function pickImage(target){currentTarget=target;$('fileInput').value='';$('fileInput').click()}
-$('fileInput').addEventListener('change',e=>{
- const f=e.target.files?.[0]; if(!f)return;
- if(f.size>60*1024*1024){toast('ফাইলের আকার 60MB-এর বেশি হতে পারবে না');return}
- const url=URL.createObjectURL(f), map={left:['leftBox','leftPreview','leftCropBtn'],right:['rightBox','rightPreview','rightCropBtn'],single:['singleUpload','singlePreview',null]};
- const ids=map[currentTarget]||map.single, box=$(ids[0]), pre=$(ids[1]);
- pre.src=url; pre.onload=()=>{cropStates[currentTarget]={src:url,img:pre,naturalW:pre.naturalWidth,naturalH:pre.naturalHeight};croppedImages[currentTarget]=null;if(ids[2])$(ids[2]).classList.remove('hidden');box.classList.add('has-image');toast('ছবি সফলভাবে আপলোড হয়েছে');openCrop(currentTarget)};
+function pickImage(target){
+  if(target==='utility'){
+    const input=$('utilityFileInput');
+    if(!input){toast('আপলোড ব্যবস্থা পাওয়া যায়নি');return}
+    input.value='';input.click();return;
+  }
+  currentTarget=target;
+  const input=$('fileInput');input.value='';input.click();
+}
+function handleCropFile(f,target){
+  if(!f)return;
+  if(f.size>60*1024*1024){toast('ফাইলের আকার 60MB-এর বেশি হতে পারবে না');return}
+  if(!/^image\/(jpeg|png|webp)$/.test(f.type)){toast('শুধু JPG, PNG বা WEBP ছবি গ্রহণ করা হচ্ছে');return}
+  sourceFiles[target]=f;
+  const url=URL.createObjectURL(f);
+  const map={left:['leftBox','leftPreview','leftCropBtn'],right:['rightBox','rightPreview','rightCropBtn'],single:['singleUpload','singlePreview',null]};
+  const ids=map[target]||map.single, box=$(ids[0]), pre=$(ids[1]);
+  pre.onload=()=>{cropStates[target]={src:url,img:pre,naturalW:pre.naturalWidth,naturalH:pre.naturalHeight};croppedImages[target]=null;if(ids[2])$(ids[2]).classList.remove('hidden');box.classList.add('has-image');toast('ছবি সফলভাবে আপলোড হয়েছে');openCrop(target)};
+  pre.src=url;
+}
+$('fileInput').addEventListener('change',e=>handleCropFile(e.target.files?.[0],currentTarget));
+$('utilityFileInput').addEventListener('change',async e=>{
+  const f=e.target.files?.[0];if(!f)return;utilityFile=f;
+  if(utilityMode==='remove'||utilityMode==='ocr'){await runUtility(f)}
+  else {toast('এই টুলের জন্য ছবিটি প্রস্তুত করা হচ্ছে');await runUtility(f)}
 });
+
 function pxFor(v,u){v=Number(v)||0;return u==='px'?Math.round(v):u==='mm'?Math.round(v/25.4*DPI):u==='cm'?Math.round(v/2.54*DPI):Math.round(v*DPI)}
 function getCropSpec(){const u=$('cropUnit').value;return {w:Number($('cropW').value)||1,h:Number($('cropH').value)||1,u,pxW:pxFor($('cropW').value,u),pxH:pxFor($('cropH').value,u)}}
-function applyPreset(key){const p=PRESETS[key]||PRESETS.custom;$('cropW').value=p.w;$('cropH').value=p.h;$('cropUnit').value=p.u;updateRatioBadge();if(cropStates[activeCropTarget])drawCrop()}
+function applyPreset(key){const p=PRESETS[key]||PRESETS.custom;$('cropW').value=p.w;$('cropH').value=p.h;$('cropUnit').value=p.u;window._cropAspect=p.w/p.h;updateRatioBadge();if(cropStates[activeCropTarget])drawCrop()}
 function updateRatioBadge(){const s=getCropSpec();$('ratioBadge').textContent=`অনুপাত ${s.w} : ${s.h} • ${s.pxW} × ${s.pxH} px @ ${DPI} DPI`}
-$('cropW').addEventListener('input',()=>{updateRatioBadge();if(cropStates[activeCropTarget])drawCrop()});
-$('cropH').addEventListener('input',()=>{updateRatioBadge();if(cropStates[activeCropTarget])drawCrop()});
+function toggleRatioLock(){cropRatioLocked=!cropRatioLocked;const b=$('ratioLockBtn');if(b){b.classList.toggle('active',cropRatioLocked);b.textContent=cropRatioLocked?'🔒 অনুপাত লক':'🔓 অনুপাত মুক্ত'};if(cropRatioLocked){window._cropAspect=getCropSpec().pxW/getCropSpec().pxH;syncCropSize('w')}}
+function syncCropSize(changed){
+ const w=Number($('cropW').value)||1,h=Number($('cropH').value)||1;
+ if(!cropRatioLocked){updateRatioBadge();if(cropStates[activeCropTarget])drawCrop();return}
+ const ratio=window._cropAspect||w/h||1;
+ if(changed==='w') $('cropH').value=(w/ratio).toFixed(2).replace(/\.00$/,'');
+ else $('cropW').value=(h*ratio).toFixed(2).replace(/\.00$/,'');
+ updateRatioBadge();if(cropStates[activeCropTarget])drawCrop();
+}
+$('cropW').addEventListener('input',()=>syncCropSize('w'));
+$('cropH').addEventListener('input',()=>syncCropSize('h'));
 $('cropUnit').addEventListener('change',()=>{updateRatioBadge();if(cropStates[activeCropTarget])drawCrop()});
 document.querySelectorAll('.bg-choice').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.bg-choice').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
 function selectedBg(){return document.querySelector('.bg-choice.active')?.dataset.bg||'original'}
@@ -49,7 +80,7 @@ function bgFill(ctx,w,h){const bg=selectedBg();if(bg==='original'||bg==='transpa
 function openCrop(target='current'){
  if(target==='current') target=$('dualModeBtn')?.classList.contains('active')?(croppedImages.left?'right':'left'):'single';
  if(!cropStates[target]){toast('প্রথমে ছবি আপলোড করুন');return}
- activeCropTarget=target;cropZoomLevel=1;cropRotation=0;cropPan={x:0,y:0};
+ activeCropTarget=target;cropZoomLevel=1;cropRotation=0;cropPan={x:0,y:0};window._cropAspect=getCropSpec().pxW/getCropSpec().pxH;
  $('cropTargetLabel').textContent=target==='left'?'ছবি ১':target==='right'?'ছবি ২':'একক ছবি';
  $('cropModal').classList.remove('hidden');document.body.classList.add('modal-open');updateRatioBadge();drawCrop();
  if($('smartMode').checked)smartCenterCrop();
@@ -76,11 +107,18 @@ function drawCrop(){
  ctx.strokeStyle='#ff941d';ctx.lineWidth=2;ctx.strokeRect(1,1,cw-2,ch-2);
  ctx.strokeStyle='#ffffff55';ctx.lineWidth=1;for(let i=1;i<3;i++){ctx.beginPath();ctx.moveTo(cw*i/3,0);ctx.lineTo(cw*i/3,ch);ctx.stroke();ctx.beginPath();ctx.moveTo(0,ch*i/3);ctx.lineTo(cw,ch*i/3);ctx.stroke()}
 }
-function pointerDown(e){dragging=true;const p=e.touches?.[0]||e;dragStart={x:p.clientX,y:p.clientY,px:cropPan.x,py:cropPan.y}}
-function pointerMove(e){if(!dragging)return;e.preventDefault();const p=e.touches?.[0]||e;cropPan.x=dragStart.px+p.clientX-dragStart.x;cropPan.y=dragStart.py+p.clientY-dragStart.y;drawCrop()}
-function pointerUp(){dragging=false}
+function touchDistance(t){if(!t||t.length<2)return 0;const dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.hypot(dx,dy)}
+function pointerDown(e){
+ if(e.touches&&e.touches.length>=2){dragging=false;pinchStartDistance=touchDistance(e.touches);pinchStartZoom=cropZoomLevel;return}
+ dragging=true;const p=e.touches?.[0]||e;dragStart={x:p.clientX,y:p.clientY,px:cropPan.x,py:cropPan.y}
+}
+function pointerMove(e){
+ if(e.touches&&e.touches.length>=2){e.preventDefault();const d=touchDistance(e.touches);if(pinchStartDistance>0){cropZoomLevel=Math.max(.5,Math.min(5,pinchStartZoom*(d/pinchStartDistance)));drawCrop()}return}
+ if(!dragging)return;e.preventDefault();const p=e.touches?.[0]||e;cropPan.x=dragStart.px+p.clientX-dragStart.x;cropPan.y=dragStart.py+p.clientY-dragStart.y;drawCrop()
+}
+function pointerUp(e){dragging=false;if(!e?.touches||e.touches.length<2)pinchStartDistance=0}
 $('cropCanvas').addEventListener('mousedown',pointerDown);$('cropCanvas').addEventListener('mousemove',pointerMove);window.addEventListener('mouseup',pointerUp);
-$('cropCanvas').addEventListener('touchstart',pointerDown,{passive:false});$('cropCanvas').addEventListener('touchmove',pointerMove,{passive:false});window.addEventListener('touchend',pointerUp);
+$('cropCanvas').addEventListener('touchstart',pointerDown,{passive:false});$('cropCanvas').addEventListener('touchmove',pointerMove,{passive:false});window.addEventListener('touchend',pointerUp,{passive:false});
 $('cropCanvas').addEventListener('wheel',e=>{e.preventDefault();cropZoom(e.deltaY<0?.12:-.12)},{passive:false});
 async function smartCenterCrop(){
  const img=sourceImage();if(!img)return;
@@ -113,12 +151,23 @@ function renderFit(ctx,img,x,y,w,h){
 }
 function joinPhotos(){
  if(!croppedImages.left||!croppedImages.right){toast('ছবি ১ ও ছবি ২ দুটিই ক্রপ করুন');return}
- const a=croppedImages.left,b=croppedImages.right, gap=Math.max(6,Math.round(Math.min(a.width,b.width)*.04));
- const baseW=a.width+b.width+gap,baseH=Math.max(a.height,b.height),c=document.createElement('canvas');c.width=baseW;c.height=baseH;const ctx=c.getContext('2d');bgFill(ctx,baseW,baseH);
- renderFit(ctx,a,0,0,a.width,baseH);renderFit(ctx,b,a.width+gap,0,b.width,baseH);
- const card=$('finalSizeCard');card.classList.remove('hidden');card.scrollIntoView({behavior:'smooth',block:'center'});window.joinCanvas=c;
- // Show a high quality intermediate preview immediately.
- showResult(c.toDataURL('image/png'));toast('জোড়া ছবি তৈরি হয়েছে');
+ try{
+   const a=croppedImages.left,b=croppedImages.right;
+   const h=Math.max(a.height,b.height);
+   const eachW=Math.max(a.width,b.width);
+   const gap=Math.max(8,Math.round(eachW*.04));
+   const c=document.createElement('canvas');c.width=eachW*2+gap;c.height=h;
+   const ctx=c.getContext('2d',{alpha:true});
+   bgFill(ctx,c.width,c.height);
+   renderFit(ctx,a,0,0,eachW,h);
+   renderFit(ctx,b,eachW+gap,0,eachW,h);
+   window.joinCanvas=c;
+   const card=$('finalSizeCard');card.classList.remove('hidden');
+   $('finalW').value=(c.width/DPI).toFixed(2);$('finalH').value=(c.height/DPI).toFixed(2);$('finalUnit').value='inch';
+   showResult(c.toDataURL('image/png'));
+   card.scrollIntoView({behavior:'smooth',block:'center'});
+   toast('জোড়া ছবি তৈরি হয়েছে — এখন চূড়ান্ত সাইজ দিন');
+ }catch(e){console.error(e);toast('জোড়া ছবি তৈরি করা যায়নি। আবার ক্রপ করে চেষ্টা করুন।')}
 }
 function generateFinal(){
  if(!window.joinCanvas){toast('প্রথমে জোড়া ছবি তৈরি করুন');return}
@@ -132,23 +181,23 @@ function regenerate(){deleteResult();setPhotoMode(croppedImages.left&&croppedIma
 function editResult(){$('resultPanel').classList.add('hidden');$('editorControls').scrollIntoView({behavior:'smooth'});toast('ইমেজ রিসাইজ ও এডিট মোড চালু')}
 function deleteResult(){$('resultPanel').classList.add('hidden');lastImage='';if($('resultImage'))$('resultImage').removeAttribute('src');toast('ফলাফল মুছে ফেলা হয়েছে')}
 function printResult(){if(!lastImage){toast('প্রথমে একটি ফলাফল তৈরি করুন');return}const w=window.open('','_blank');w.document.write(`<html><head><title>SOHOZKAJ Print</title><style>@page{margin:0}html,body{margin:0;text-align:center;background:#fff}img{max-width:100%;height:auto}</style></head><body><img src="${lastImage}" onload="window.print()"></body></html>`);w.document.close()}
-function smartCropAll(){if($('smartMode').checked){const targets=croppedImages.left&&croppedImages.right?['left','right']:['single'];targets.forEach(t=>{if(cropStates[t]){activeCropTarget=t;smartCenterCrop()}});toast('স্মার্ট ক্রপ সক্রিয় করা হয়েছে')}else{$('smartMode').checked=true;openCrop(croppedImages.left?'right':'single')}}
+async function smartCropAll(){if($('smartMode').checked){const targets=cropStates.left&&cropStates.right?['left','right']:['single'];for(const t of targets){if(cropStates[t]){activeCropTarget=t;await smartCenterCrop()}};toast('স্মার্ট ক্রপ সক্রিয় করা হয়েছে')}else{$('smartMode').checked=true;openCrop(croppedImages.left?'right':'single')}}
 function focusPrompt(){openSheet('settingsSheet');setTimeout(()=>$('prompt')?.focus(),250)}
 async function postImage(url,form){const r=await fetch(url,{method:'POST',body:form});const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||'অনুরোধ ব্যর্থ হয়েছে');return d}
-function selectedImage(){const img=$('singlePreview');return img?.src&&$('singleUpload')?.classList.contains('has-image')?img:null}
+function selectedImage(){const img=$('singlePreview');return img?.src&&sourceFiles.single?img:null}
 async function generateAI(){
  closeSheets();const img=selectedImage();if(!img){toast('প্রথমে একটি ছবি আপলোড করুন');return}
- const f=$('fileInput').files[0];if(!f){toast('ছবিটি আবার নির্বাচন করুন');return}
+ const f=sourceFiles.single;if(!f){toast('ছবিটি আবার নির্বাচন করুন');return}
  toast('AI ছবি তৈরি করছে…');const fd=new FormData();fd.append('image',f);fd.append('prompt',$('prompt').value);fd.append('quality',$('quality').value);fd.append('size','auto');fd.append('background','auto');
  try{const d=await postImage('/api/ai-edit',fd);showResult(d.image)}catch(e){toast(e.message+' — .env API key পরীক্ষা করুন।')}
 }
 function useResult(){deleteResult();toast('আবার এডিট করতে ছবি আপলোড করুন')}
 async function runUtility(file){
- if(utilityMode==='remove'){toast('ব্যাকগ্রাউন্ড রিমুভ হচ্ছে…');const fd=new FormData();fd.append('image',file);fd.append('provider',$('bgProvider')?.value||'cutoutpro');try{const d=await postImage('/api/remove-bg',fd);closeSheets();showResult(d.image);toast(`${d.provider==='removebg'?'remove.bg':'Cutout.Pro'} দিয়ে ব্যাকগ্রাউন্ড সরানো হয়েছে`)}catch(e){toast(e.message)}}
+ if(utilityMode==='remove'){toast('ব্যাকগ্রাউন্ড রিমুভ হচ্ছে…');const fd=new FormData();fd.append('image',file);fd.append('provider',$('bgProvider')?.value||'auto');try{const d=await postImage('/api/remove-bg',fd);closeSheets();showResult(d.image);toast(`${d.provider==='removebg'?'remove.bg':'Cutout.Pro'} দিয়ে ব্যাকগ্রাউন্ড সরানো হয়েছে`)}catch(e){toast('ব্যাকগ্রাউন্ড রিমুভ হয়নি: '+e.message)}}
  else if(utilityMode==='ocr'){toast('ছবি থেকে লেখা পড়া হচ্ছে…');const fd=new FormData();fd.append('image',file);try{const d=await postImage('/api/ocr',fd);openSheet('utilitySheet');$('utilityTitle').textContent='ছবি থেকে লেখা';$('utilityText').textContent='OCR ফলাফল';$('ocrOutput').textContent=d.text||'কোনো লেখা পাওয়া যায়নি';$('ocrOutput').classList.remove('hidden')}catch(e){toast(e.message)}}
  else toast('এই টুলটি UI-তে প্রস্তুত; API module পরে যুক্ত করা যাবে')
 }
-function openUpload(mode){utilityMode=mode;openSheet('utilitySheet');$('utilityTitle').textContent=mode==='ocr'?'ছবি থেকে লেখা':mode==='remove'?'ব্যাকগ্রাউন্ড রিমুভ':mode==='compress'?'ইমেজ কমপ্রেস':'ইমেজ টুল';$('utilityText').textContent='একটি ছবি আপলোড করুন';$('ocrOutput').classList.add('hidden');$('bgProviderRow')?.classList.toggle('hidden',mode!=='remove')}
+function openUpload(mode){utilityMode=mode;openSheet('utilitySheet');if(mode==='remove'&&$('bgProvider'))$('bgProvider').value='auto';$('utilityTitle').textContent=mode==='ocr'?'ছবি থেকে লেখা':mode==='remove'?'ব্যাকগ্রাউন্ড রিমুভ':mode==='compress'?'ইমেজ কমপ্রেস':'ইমেজ টুল';$('utilityText').textContent='একটি ছবি আপলোড করুন';$('ocrOutput').classList.add('hidden');$('bgProviderRow')?.classList.toggle('hidden',mode!=='remove')}
 const sizes=[['২×২ ইঞ্চি','পাসপোর্ট/আইডি'],['৩৫×৪৫ মিমি','স্ট্যান্ডার্ড'],['৪০×৬০ মিমি','ভিসা'],['৪০×৫০ মিমি','ডকুমেন্ট'],['৩৫×৫০ মিমি','অন্যান্য']];
 $('sizeGrid').innerHTML=sizes.map((s,i)=>`<button class="${i===0?'selected':''}" onclick="selectSize(this)"><b>${s[0]}</b><br><span>${s[1]}</span></button>`).join('');
 function selectSize(el){document.querySelectorAll('.size-grid button').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');toast('ছবির মাপ নির্বাচিত হয়েছে')}
