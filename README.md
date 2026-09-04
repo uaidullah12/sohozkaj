@@ -1,6 +1,21 @@
-# সহজ কাজ — Full Web App Starter
+# সহজ কাজ — SOHOZKAJ Photo Crop & Join Upgrade
 
-বাংলা mobile-first photo/document utility app, screenshots অনুযায়ী UI এবং backend API integration সহ।
+এই আপডেটটি বিদ্যমান SOHOZKAJ অ্যাপের উপর করা হয়েছে—পুরনো AI Edit, Background Remove, OCR API ও অন্যান্য UI flow সরানো হয়নি।
+
+## নতুন ফটো প্রসেসিং সুবিধা
+
+- একক ছবি স্বাধীনভাবে নির্দিষ্ট aspect ratio-তে ক্রপ
+- দুইটি আলাদা ছবি আপলোড ও আলাদাভাবে ক্রপ
+- বাংলা preset: Passport, Visa, NID, Job Application, Birth Certificate, 2×2 inch, 35×45 mm, 40×50 mm, 3.5×4.5 cm এবং Custom
+- Width / Height + px, mm, cm, inch
+- Drag/pan, zoom in/out, rotate, reset, live preview
+- স্মার্ট/AI crop option; browser FaceDetector থাকলে মুখের অবস্থান বিবেচনা করে framing
+- "জোড়া ছবি তৈরি করুন": বাম/ডান, সমান sizing, alignment, spacing, no-stretch rendering
+- Final joined output exact pixel dimensions; physical units 300 DPI-তে px-এ রূপান্তর
+- Original / White / Transparent / Custom background
+- Print-ready PNG output ও print action
+- বাংলা final actions: ডাউনলোড, আবার জেনারেট, প্রিন্ট, ইমেজ রিসাইজ ও এডিট, মুছে ফেলুন
+- Android ও desktop responsive crop modal
 
 ## চালু করুন
 
@@ -12,19 +27,9 @@
 6. `npm start`
 7. Browser-এ `http://localhost:3000`
 
-## API
-
-- `POST /api/ai-edit` — OpenAI image editing
-- `POST /api/remove-bg` — Cutout.Pro background removal
-- `POST /api/ocr` — Google Cloud Vision OCR
-- `GET /api/health` — configured services check
-
-API keys কখনও frontend-এ রাখবেন না। `.env` শুধু server-side রাখুন।
-
 ## গুরুত্বপূর্ণ
 
-এই version-এ core AI Edit, Background Remove এবং OCR flow wired করা আছে। অন্যান্য UI tools-এর জন্য screen/UI প্রস্তুত রাখা হয়েছে; production-ready করতে আলাদা PDF/document processing, authentication, database, payment/credits এবং job/news data API যুক্ত করতে হবে।
-
-
-### Cutout.Pro
-Background removal is connected to Cutout.Pro. Put your Main API Key in `CUTOUT_PRO_API_KEY` in `.env` or your Render Environment Variables. The key is intentionally not included in this ZIP. Cutout.Pro expects the API key in the `APIKEY` header.
+- Existing API routes unchanged রাখা হয়েছে।
+- API keys frontend-এ রাখা হয়নি।
+- Crop/join processing browser canvas-এ হয়; মূল uploaded file পরিবর্তন করা হয় না।
+- Final physical sizes are rendered at 300 DPI for print-oriented output.

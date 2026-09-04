@@ -37,6 +37,7 @@ app.get('/api/health', (_req, res) => res.json({
   services: {
     openai: Boolean(process.env.OPENAI_API_KEY),
     cutoutpro: Boolean(process.env.CUTOUT_PRO_API_KEY),
+    removebg: Boolean(process.env.REMOVE_BG_API_KEY),
     vision: Boolean(process.env.GOOGLE_VISION_API_KEY)
   }
 }));
@@ -70,30 +71,46 @@ app.post('/api/ai-edit', upload.single('image'), async (req, res) => {
 
 app.post('/api/remove-bg', upload.single('image'), async (req, res) => {
   try {
-    requireKey(process.env.CUTOUT_PRO_API_KEY, 'Cutout.Pro');
     if (!req.file) return res.status(400).json({ ok: false, error: 'একটি ছবি আপলোড করুন।' });
+    const provider = ['cutoutpro', 'removebg'].includes(String(req.body.provider || 'cutoutpro')) ? String(req.body.provider || 'cutoutpro') : 'cutoutpro';
+    let response;
+    const bytes = fs.readFileSync(req.file.path);
 
-    const form = new FormData();
-    form.append('file', new Blob([fs.readFileSync(req.file.path)], { type: req.file.mimetype }), req.file.originalname);
-    const response = await fetch('https://www.cutout.pro/api/v1/matting?mattingType=6&crop=true', {
-      method: 'POST',
-      headers: { 'APIKEY': process.env.CUTOUT_PRO_API_KEY },
-      body: form
-    });
+    if (provider === 'removebg') {
+      requireKey(process.env.REMOVE_BG_API_KEY, 'remove.bg');
+      const form = new FormData();
+      form.append('image_file', new Blob([bytes], { type: req.file.mimetype }), req.file.originalname);
+      form.append('size', String(req.body.size || 'auto'));
+      form.append('format', 'png');
+      response = await fetch('https://api.remove.bg/v1.0/removebg', {
+        method: 'POST',
+        headers: { 'X-Api-Key': process.env.REMOVE_BG_API_KEY },
+        body: form
+      });
+    } else {
+      requireKey(process.env.CUTOUT_PRO_API_KEY, 'Cutout.Pro');
+      const form = new FormData();
+      form.append('file', new Blob([bytes], { type: req.file.mimetype }), req.file.originalname);
+      response = await fetch('https://www.cutout.pro/api/v1/matting?mattingType=6&crop=true', {
+        method: 'POST',
+        headers: { 'APIKEY': process.env.CUTOUT_PRO_API_KEY },
+        body: form
+      });
+    }
 
     const contentType = response.headers.get('content-type') || '';
     if (!response.ok) {
       const text = await response.text();
       let message = text;
-      try { message = JSON.parse(text)?.msg || JSON.parse(text)?.message || text; } catch {}
-      throw new Error(`Cutout.Pro: ${message}`);
+      try { const j = JSON.parse(text); message = j?.msg || j?.message || j?.errors?.[0]?.title || text; } catch {}
+      throw new Error(`${provider === 'removebg' ? 'remove.bg' : 'Cutout.Pro'}: ${message}`);
     }
     const buffer = Buffer.from(await response.arrayBuffer());
-    const mime = contentType.includes('webp') ? 'image/webp' : 'image/png';
-    res.json({ ok: true, image: `data:${mime};base64,${buffer.toString('base64')}` });
+    const mime = contentType.includes('webp') ? 'image/webp' : contentType.includes('jpeg') || contentType.includes('jpg') ? 'image/jpeg' : 'image/png';
+    res.json({ ok: true, provider, image: `data:${mime};base64,${buffer.toString('base64')}` });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ ok: false, error: err?.message || 'Background removal ব্যর্থ হয়েছে।' });
+    res.status(500).json({ ok: false, error: err?.message || 'ব্যাকগ্রাউন্ড রিমুভ ব্যর্থ হয়েছে।' });
   } finally { cleanup(req.file); }
 });
 
