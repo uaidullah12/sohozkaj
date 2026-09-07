@@ -1,0 +1,18 @@
+{
+  "settings": {"siteName":"সহজ কাজ","creditSystem":true},
+  "tools": [
+    {"id":"ai","name":"এআই ফটো এডিট","enabled":true,"free":false,"creditCost":5,"limitType":"unlimited","limit":0,"badge":""},
+    {"id":"joint","name":"জয়েন্ট ছবি","enabled":true,"free":false,"creditCost":5,"limitType":"unlimited","limit":0,"badge":"নতুন"},
+    {"id":"remove","name":"ব্যাকগ্রাউন্ড রিমুভ","enabled":true,"free":false,"creditCost":1,"limitType":"unlimited","limit":0,"badge":""},
+    {"id":"ocr","name":"ছবি থেকে লেখা","enabled":true,"free":false,"creditCost":1,"limitType":"unlimited","limit":0,"badge":"নতুন"},
+    {"id":"compress","name":"ইমেজ কমপ্রেস","enabled":true,"free":true,"creditCost":0,"limitType":"unlimited","limit":0,"badge":""}
+  ],
+  "applications": [],
+  "plans": [
+    {"id":"free","name":"ফ্রি","credit":10,"days":7,"unlimited":false,"enabled":true},
+    {"id":"pro","name":"প্রো","credit":500,"days":30,"unlimited":false,"enabled":true},
+    {"id":"unlimited","name":"আনলিমিটেড","credit":0,"days":30,"unlimited":true,"enabled":true}
+  ],
+  "users": [],
+  "usage": []
+}

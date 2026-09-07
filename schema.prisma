@@ -1,0 +1,7 @@
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+generator client { provider = "prisma-client-js" }
+model User { id String @id @default(cuid()); name String; email String @unique; passwordHash String?; credit Int @default(0); unlimited Boolean @default(false); accessExpiresAt DateTime?; createdAt DateTime @default(now()); usage UsageLog[] }
+model Tool { id String @id; name String; enabled Boolean @default(true); free Boolean @default(false); creditCost Int @default(0); limitType String @default("unlimited"); limit Int @default(0) }
+model Plan { id String @id @default(cuid()); name String; credit Int @default(0); days Int @default(30); unlimited Boolean @default(false); enabled Boolean @default(true) }
+model Application { id String @id @default(cuid()); title String; description String?; url String; deadline DateTime?; enabled Boolean @default(true); createdAt DateTime @default(now()) }
+model UsageLog { id String @id @default(cuid()); userId String; toolId String; credit Int @default(0); status String; createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]) }
