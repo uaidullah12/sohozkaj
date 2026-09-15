@@ -117,7 +117,7 @@ export class GeminiProvider implements IAIProvider {
 
       return {
         ok: false,
-        error: 'ন��টওয়ার্ক সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।',
+        error: 'নেটওয়ার্ক সমস্যা হয়েছে। ইন্টারনেট সংযোগ চেক করুন।',
       };
     }
   }

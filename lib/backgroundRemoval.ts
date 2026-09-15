@@ -1,4 +1,4 @@
-// lib/ai/backgroundRemoval.ts
+// lib/backgroundRemoval.ts
 // Background Removal Provider - Abstraction layer for multiple services
 
 export interface BackgroundRemovalConfig {
@@ -124,7 +124,7 @@ export class RemoveBgProvider implements IBackgroundRemovalProvider {
     } catch (error) {
       return {
         ok: false,
-        error: 'ব্যাকগ্রাউন্ড রিমুভ সেবা অনুপলব্ধ।',
+        error: 'ব্যাকগ্রাউন্ড রিমুভ সেবা অনুপলব���ধ।',
       };
     }
   }
